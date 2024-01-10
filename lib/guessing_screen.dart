@@ -1,79 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:guessinggame/guessing_screen_controller.dart';
 
-class GuessingScreen extends StatefulWidget {
-  const GuessingScreen({Key? key}) : super(key: key);
 
-  @override
-  State<GuessingScreen> createState() => _GuessingScreenState();
-}
-
-class _GuessingScreenState extends State<GuessingScreen> {
-  late int targetNumber;
-  TextEditingController guessController = TextEditingController();
-  List<String> feedbackList = [];
-  bool showFeedback = false;
-  int guessCount = 0;
-  bool gameOver = false;
-
-  @override
-  void initState() {
-    super.initState();
-    startNewGame();
-  }
-
-  void startNewGame() {
-    setState(() {
-      targetNumber = Random().nextInt(100) + 1;
-      guessController.text = "";
-      showFeedback = false;
-      feedbackList.clear();
-      guessCount = 0;
-      gameOver = false;
-    });
-  }
-
-  void checkGuess() {
-    if (gameOver) return;
-
-    int? userGuess = int.tryParse(guessController.text);
-
-    if (userGuess == null) {
-      setState(() {
-        feedbackList.add("Please enter a valid number.");
-        showFeedback = true;
-      });
-    } else {
-      setState(() {
-        guessCount++;
-        if (userGuess == targetNumber) {
-          feedbackList.add("Congratulations! You guessed the correct number!");
-        } else if (userGuess < targetNumber) {
-          feedbackList.add("The number is greater than $userGuess. Try again!");
-        } else {
-          feedbackList.add("The number is smaller than $userGuess. Try again!");
-        }
-        if (guessCount == 5) {
-          feedbackList.add(
-              "Sorry, you've reached the maximum number of guesses. The number is $targetNumber.");
-          gameOver = true;
-        }
-        showFeedback = true;
-      });
-    }
-  }
-
-  void provideHint() {
-    setState(() {
-      if (targetNumber % 2 == 0) {
-        feedbackList.add("Hint: The number is even.");
-      } else {
-        feedbackList.add("Hint: The number is odd.");
-      }
-      showFeedback = true;
-    });
-  }
+class GuessingScreen extends StatelessWidget {
+  final GuessingController controller = Get.put(GuessingController());
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +35,7 @@ class _GuessingScreenState extends State<GuessingScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  startNewGame();
+                  controller.startNewGame();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF69B7F0),
@@ -134,7 +65,7 @@ class _GuessingScreenState extends State<GuessingScreen> {
                 height: 10,
               ),
               TextField(
-                controller: guessController,
+                controller: controller.guessController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   filled: true,
@@ -161,7 +92,7 @@ class _GuessingScreenState extends State<GuessingScreen> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      checkGuess();
+                      controller.checkGuess();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF69B7F0),
@@ -185,7 +116,7 @@ class _GuessingScreenState extends State<GuessingScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      provideHint();
+                      controller.provideHint();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF69B7F0),
@@ -209,57 +140,65 @@ class _GuessingScreenState extends State<GuessingScreen> {
               const SizedBox(
                 height: 20,
               ),
-              if (showFeedback)
-                ListView.builder(
-                  itemCount: feedbackList.length,
-                  shrinkWrap: true,
-                  reverse: true,
-                  itemBuilder: (context, index) => Container(
-                    height: 80,
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black),
-                        children: [
-                          if (feedbackList[index].contains("Congratulations"))
-                            TextSpan(
-                              text: feedbackList[index],
-                              style: const TextStyle(color: Colors.green),
-                            )
-                          else if (feedbackList[index].contains("smaller"))
-                            TextSpan(
-                              text: feedbackList[index],
-                              style: const TextStyle(color: Colors.red),
-                            )
-                          else if (feedbackList[index].contains("greater"))
-                            TextSpan(
-                              text: feedbackList[index],
-                              style: const TextStyle(color: Colors.blue),
-                            )
-                          else if (feedbackList[index].contains("Hint"))
-                            TextSpan(
-                              text: feedbackList[index],
-                              style: const TextStyle(color: Colors.orange),
-                            )
-                          else
-                            TextSpan(
-                              text: feedbackList[index],
-                              style: const TextStyle(color: Colors.black),
-                            ),
-                        ],
+              Obx(
+                () => Visibility(
+                  visible: controller.showFeedback.value,
+                  child: ListView.builder(
+                    itemCount: controller.feedbackList.length,
+                    shrinkWrap: true,
+                    reverse: true,
+                    itemBuilder: (context, index) => Container(
+                      height: 80,
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16.0),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black),
+                          children: [
+                            if (controller.feedbackList[index]
+                                .contains("Congratulations"))
+                              TextSpan(
+                                text: controller.feedbackList[index],
+                                style: const TextStyle(color: Colors.green),
+                              )
+                            else if (controller.feedbackList[index]
+                                .contains("smaller"))
+                              TextSpan(
+                                text: controller.feedbackList[index],
+                                style: const TextStyle(color: Colors.red),
+                              )
+                            else if (controller.feedbackList[index]
+                                .contains("greater"))
+                              TextSpan(
+                                text: controller.feedbackList[index],
+                                style: const TextStyle(color: Colors.blue),
+                              )
+                            else if (controller.feedbackList[index]
+                                .contains("Hint"))
+                              TextSpan(
+                                text: controller.feedbackList[index],
+                                style: const TextStyle(color: Colors.orange),
+                              )
+                            else
+                              TextSpan(
+                                text: controller.feedbackList[index],
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),
